@@ -1,6 +1,5 @@
 #%%
 import cv2
-x = 12
 input_video_path = 'Simple1.mp4'
 
 cap = cv2.VideoCapture(input_video_path)
