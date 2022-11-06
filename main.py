@@ -66,8 +66,9 @@ for i in range(num_frames-2):
     print("Frame: " + str(i) +  "/" + str(num_frames) + " -  Tracked points : " + str(len(last_points)))
 
 
-
-
+all_dx = transforms[:,0]
+all_dy = transforms[:,1]
+all_da = transforms[:,2]
 
 """frame_list = []
 while(cap.isOpened()):
