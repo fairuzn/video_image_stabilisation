@@ -66,9 +66,67 @@ for i in range(num_frames-2):
     print("Frame: " + str(i) +  "/" + str(num_frames) + " -  Tracked points : " + str(len(last_points)))
 
 
+#explicitly shows all the different transforms of dx,dy,da
 all_dx = transforms[:,0]
 all_dy = transforms[:,1]
 all_da = transforms[:,2]
+trajectory = np.cumsum(transforms,axis=0)
+
+
+fr = np.arange(0,num_frames-1,1)
+
+
+
+#creating a function for moving averages to smooth out the curve 
+
+
+
+
+#creates figure for the transforms changes in pixles
+plt.figure(figsize=[8,6])
+plt.ylabel("delta pixels")
+plt.xlabel("frames")
+plt.plot(fr,all_dx,color="blue",label="dx")
+plt.plot(fr,all_dy,color="green",label="dy")
+plt.plot(fr,all_da,color="red",label="da")
+plt.legend()
+
+#creates figure for the trajectory of motion
+plt.figure(figsize=[8,6])
+plt.ylabel("delta pixels")
+plt.xlabel("frames")
+plt.plot(fr,trajectory[:,0],color="blue",label="x trajectory")
+plt.plot(fr,trajectory[:,1],color="green",label="y trajectory")
+plt.plot(fr,trajectory[:,2],color="red",label="a trajectory")
+plt.legend()
+
+
+
+YT_dx = np.fft.fft(all_dx)
+YT_dxr = np.fft.rfft(all_dx)
+YT_dy = np.fft.fft(all_dy)
+YT_da = np.fft.fft(all_da)
+XT = np.fft.fftfreq(num_frames-1)
+XTr = np.fft.rfftfreq(num_frames-1)
+plt.figure(figsize=[8,6])
+plt.title("Fourier Transform of dx")
+plt.ylabel("Amplitude")
+plt.xlabel("Relative Frequencies")
+plt.plot(XT,YT_dx)
+plt.figure(figsize=[8,6])
+plt.title("Fourier Transform of the dx  only real numbers")
+plt.ylabel("Amplitude")
+plt.xlabel("Relative Frequencies")
+plt.plot(XTr,YT_dxr)
+
+
+
+
+plt.show()
+
+
+
+
 
 """frame_list = []
 while(cap.isOpened()):
