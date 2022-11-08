@@ -17,6 +17,15 @@ last_gray = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
 #3 dimensions to account for dx,dy and da where da is the rotation
 transforms = np.zeros((num_frames-1, 3), np.float32) 
 
+width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+# Define the codec for output video
+fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+ 
+# Set up output video
+out = cv2.VideoWriter('video_out.mp4', fourcc, fps=cap.get(cv2.CAP_PROP_FPS), frameSize= (width, height))
+
 #loop to get the movment of pixels between frames
 #for i in range(num_frames-2):
 i= 0
@@ -71,7 +80,7 @@ all_dx = transforms[:,0]
 all_dy = transforms[:,1]
 all_da = transforms[:,2]
 trajectory = np.cumsum(transforms,axis=0)
-
+Smoothing_Radius = 50
 
 fr = np.arange(0,num_frames-1,1)
 
@@ -83,28 +92,85 @@ def MovingAverage(c,r):
     #filter
     filter = np.ones(window)/window
     #add padding
-    c_pad = np.pad(c,(r,r),"edge")
+    c_pad = np.lib.pad(c,(r,r),"edge")
     #applying convolution 
     smoothed_c = np.convolve(c_pad,filter,mode="same")
     #removes padding going from r to -r
     smoothed_c = smoothed_c[r:-r]
     return smoothed_c
 
-def SmoothTrajectory(trajectory,r):
+def SmoothTrajectory(trajectory):
+    global Smoothing_Radius
     smoothed_trajectory = np.copy(trajectory)
     #filters x,y and angle of the curve
     for i in range(3):
-        smoothed_trajectory[:,i] = MovingAverage(trajectory[:,i],r)
+        smoothed_trajectory[:,i] = MovingAverage(trajectory[:,i],r = Smoothing_Radius)
+
+    return smoothed_trajectory
+
+def borderfixing(frame):
+    s = frame.shape
+    #scale the image 4% without moving the centre 
+    T = cv2.getRotationMatrix2D((s[1]/2,s[0]/2),0,1.04)
+    frame = cv2.warpAffine(frame,T,(s[1],s[0]))
+    return frame
 
 
 
-difference = SmoothTrajectory(trajectory,r=5) - trajectory
+difference = SmoothTrajectory(trajectory) - trajectory
 # Calculate newer transformation array
 transforms_smooth = transforms + difference
 
 
 
+#setting the video's frame back to the beginning
+cap.set(cv2.CAP_PROP_POS_FRAMES,0)
 
+for i in range(num_frames-2):
+    ret,frames = cap.read()
+    if not ret: 
+        break
+    
+    # Extract transformations from the new transformation array
+    dx = transforms_smooth[i,0]
+    dy = transforms_smooth[i,1]
+    da = transforms_smooth[i,2]
+    
+    # Reconstruct transformation matrix accordingly to new values
+    m = np.zeros((2,3), np.float32)
+    m[0,0] = np.cos(da)
+    m[0,1] = -np.sin(da)
+    m[1,0] = np.sin(da)
+    m[1,1] = np.cos(da)
+    m[0,2] = dx
+    m[1,2] = dy
+    # Apply affine wrapping to the given frame
+    frame_stabilized = cv2.warpAffine(frame, m, (width,height))
+    
+    # Fix border artifacts
+    frame_stabilized = borderfixing(frame_stabilized) 
+    
+    # Apply affine wrapping to the given frame
+    frame_stabilized = cv2.warpAffine(frame, m, (width,height))
+
+	# Fix border artifacts
+    frame_stabilized = borderfixing(frame_stabilized) 
+
+	# Write the frame to the file
+    frame_out = cv2.hconcat([frame, frame_stabilized])
+
+	# If the image is too big, resize it.
+    if(np.array(frame_out).shape[1] > 1920): 
+        frame_out = cv2.resize(frame_out, (int(np.array(frame_out).shape[1]/2), int(np.array(frame_out).shape[0]/2)))
+
+
+    cv2.imshow("Before and After", frame_out)
+    cv2.waitKey(10)
+out.write(frame_out)
+        
+# Release video
+cap.release()
+out.release()
 
 #creates figure for the transforms changes in pixles
 plt.figure(figsize=[8,6])
@@ -114,6 +180,13 @@ plt.plot(fr,all_dx,color="blue",label="dx")
 plt.plot(fr,all_dy,color="green",label="dy")
 plt.plot(fr,all_da,color="red",label="da")
 plt.legend()
+
+#smooth transforms 
+plt.figure(figsize=[8,6])
+plt.title("Smoothed out transforms dx")
+plt.ylabel("delta pixels")
+plt.xlabel("frames")
+plt.plot(fr,transforms_smooth[:,0])
 
 #creates figure for the trajectory of motion
 plt.figure(figsize=[8,6])
