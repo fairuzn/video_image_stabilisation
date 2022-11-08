@@ -78,6 +78,8 @@ fr = np.arange(0,num_frames-1,1)
 
 
 #creating a function for moving averages to smooth out the curve 
+def MovingAverage(c,r):
+    window = 2*r*+1
 
 
 
