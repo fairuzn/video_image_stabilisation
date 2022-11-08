@@ -80,6 +80,28 @@ fr = np.arange(0,num_frames-1,1)
 #creating a function for moving averages to smooth out the curve 
 def MovingAverage(c,r):
     window = 2*r*+1
+    #filter
+    filter = np.ones(window)/window
+    #add padding
+    c_pad = np.pad(c,(r,r),"edge")
+    #applying convolution 
+    smoothed_c = np.convolve(c_pad,filter,mode="same")
+    #removes padding going from r to -r
+    smoothed_c = smoothed_c[r:-r]
+    return smoothed_c
+
+def SmoothTrajectory(trajectory,r):
+    smoothed_trajectory = np.copy(trajectory)
+    #filters x,y and angle of the curve
+    for i in range(3):
+        smoothed_trajectory[:,i] = MovingAverage(trajectory[:,i],r)
+
+
+
+difference = SmoothTrajectory(trajectory,r=5) - trajectory
+# Calculate newer transformation array
+transforms_smooth = transforms + difference
+
 
 
 
