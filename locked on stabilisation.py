@@ -12,7 +12,7 @@ def onMouse(event, x, y, flag, param):
 cv2.namedWindow("window")
 cv2.setMouseCallback("window", onMouse)
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture('dotsquiggle2.mp4')
 
 while True:
 	_, frm = cap.read()
@@ -28,32 +28,32 @@ old_pts = np.array([ix,iy], dtype="float32").reshape(-1,1,2)
 mask = np.zeros_like(frm)
 
 while True:
-	_, frame2 = cap.read()
+    _, frame2 = cap.read()
 
-	new_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
+    new_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
 
-	new_pts,status,err = cv2.calcOpticalFlowPyrLK(old_gray, 
+    new_pts,status,err = cv2.calcOpticalFlowPyrLK(old_gray, 
                          new_gray, 
                          old_pts, 
                          None, maxLevel=1,
                          criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
                                                          15, 0.08))
 
-	cv2.circle(mask, (int(new_pts.ravel()[0]), int(new_pts.ravel()[1])), 2, (0,255,0), 2)
-	combined = cv2.addWeighted(frame2, 0.7, mask, 0.3, 0.1)
+    cv2.circle(mask, (int(new_pts.ravel()[0]), int(new_pts.ravel()[1])), 2, (0,255,0), 2)
+    combined = cv2.addWeighted(frame2, 0.7, mask, 0.3, 0.1)
 
-	cv2.imshow("new win", mask)
-	cv2.imshow("wind", combined)
+    cv2.imshow("new win", mask)
+    cv2.imshow("wind", combined)
 
-	old_gray = new_gray.copy()
-	old_pts = new_pts.copy()
+    old_gray = new_gray.copy()
+    old_pts = new_pts.copy()
     
     x1 = int(new_pts.ravel()[0]) - 100
     x2 = int(new_pts.ravel()[0]) + 100
     y1 = int(new_pts.ravel()[1]) - 100
     y2 = int(new_pts.ravel()[1]) + 100
     cropped_vid = frame2[x1:x2, y1:y2]
-    cv2.imshow("Cropped Video", frame2)
+    cv2.imshow("Cropped Video", cropped_vid)
 
     if cv2.waitKey(1) == 27:
         cap.release()
