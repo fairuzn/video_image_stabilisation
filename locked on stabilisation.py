@@ -12,7 +12,7 @@ def onMouse(event, x, y, flag, param):
 cv2.namedWindow("window")
 cv2.setMouseCallback("window", onMouse)
 
-cap = cv2.VideoCapture('dotsquiggle2.mp4')
+cap = cv2.VideoCapture('boat.mp4')
 
 while True:
 	_, frm = cap.read()
